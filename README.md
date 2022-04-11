@@ -1,0 +1,173 @@
+# Pumpwood Kong
+Interact with <a href="https://konghq.com/kong"> Kong API gateway </a>
+to set and list routes.
+
+Source code avaiable at <a href="https://github.com/Murabei-OpenSource-Codes/pumpwood-kong">
+  github
+</a>.
+
+<p align="center" width="60%">
+  <img src="doc/sitelogo-horizontal.png" /> <br>
+
+  <a href="https://en.wikipedia.org/wiki/Cecropia">
+    Pumpwood is a native brasilian tree
+  </a> which has a symbiotic relation with ants (Murabei)
+</p>
+
+# Description
+This package helps to interact with Kong API Gateway to create
+services and routes. It also list services and routes.
+
+
+## from pumpwood_kong.kong_api import KongAPI
+Class to help interact with Kong API gateway. Constructor receives the
+Kong API end-point as parameter, then expose different functions to interact
+with.
+
+```
+import os
+from pumpwood_kong.kong_api import KongAPI
+
+
+# Create an Kong api using API_GATEWAY_URL enviroment variable
+API_GATEWAY_URL = os.environ.get("API_GATEWAY_URL")
+kong_api = KongAPI(api_gateway_url=API_GATEWAY_URL)
+```
+
+### KongAPI.list_services
+List services registered on Kong.
+
+```
+kong_api.list_services()
+
+: [{'tls_verify_depth': None,
+:   'name': 'reload-db--pumpwood-auth-app',
+:   'port': 5000,
+:   'created_at': 1649701642,
+:   'updated_at': 1649701642,
+:   'id': '3740231f-66e0-4050-a4ac-2ab0814507ca',
+:   'connect_timeout': 60000,
+:   'tags': None,
+:   'read_timeout': 60000,
+:   'host': 'test-db-pumpwood-auth',
+:   'path': '/',
+:   'ca_certificates': None,
+:   'write_timeout': 60000,
+:   'client_certificate': None,
+:   'enabled': True,
+:   'protocol': 'http',
+:   'tls_verify': None,
+:   'retries': 5},
+:   ...
+: ]
+```
+
+### KongAPI.list_service_routes(service_id: str)
+List routes associated with a services.
+
+```
+registed_services = kong_api.list_service_routes()
+for service in registed_services:
+  registed_routes = kong_api.list_service_routes(
+      service_id=service["id"])
+
+: {'name': 'static--pumpwood-auth-app',
+:   'created_at': 1649701652,
+:   'updated_at': 1649701652,
+:   'paths': ['/static/pumpwood-auth-app/'],
+:   'methods': None,
+:   'sources': None,
+:   'destinations': None,
+:   'snis': None,
+:   'hosts': None,
+:   'tags': None,
+:   'request_buffering': True,
+:   'response_buffering': True,
+:   'strip_path': False,
+:   'path_handling': 'v0',
+:   'https_redirect_status_code': 426,
+:   'preserve_host': False,
+:   'service': {'id': '7bd34303-4f65-4205-8e8e-d017f2729c34'},
+:   'regex_priority': 0,
+:   'id': 'b07f4695-af04-4447-acbf-89bd9f1c2e0e',
+:   'headers': None,
+:   'protocols': ['http', 'https']}]
+```
+
+### KongAPI.delete_service(service_id: str)
+Remove service from Kong. It will raise an error if there is any routes
+associated with the service
+
+```
+registed_services = kong_api.list_service_routes()
+for service in registed_services:
+  registed_routes = kong_api.delete_service(
+      service_id=service["id"])
+```
+
+### KongAPI.delete_route(service_id: str)
+Delete route from Kong.
+
+```
+registed_services = kong_api.list_service_routes()
+
+for service in registed_services:
+  registed_routes = kong_api.list_service_routes(service_id=service["id"])
+  for route in registed_routes:
+    kong_api.delete_route(route_id=route["id"])
+```
+
+### KongAPI.delete_routes_and_service(service_id: str)
+Remove all routes associated with a service and then remove the service.
+
+```
+registed_services = kong_api.list_service_routes()
+for service in registed_services:
+  registed_routes = kong_api.delete_routes_and_service(
+      service_id=service["id"])
+```
+
+### KongAPI.register_service
+Register a service at Kong. If service_kong_id is passed as argument
+it will try to update an existing service, if not available a new one will
+be created.
+
+`healthcheck_route` is the end-point at which is expected to return a 2XX
+status.
+
+```
+kong_api.register_service(
+    service_name="test-service",
+    service_url="http://kubernets-service-route:5000/",
+    healthcheck_route = "service-test/health-check",
+    service_kong_id="XXXXX-YYYYY-DDDDD-12345")
+```
+
+### KongAPI.register_route
+Register a route at service_id service. `strip_path` is used as parameter
+to create Kong route.
+
+```
+kong_api.register_route(
+  service_id="XXXXX-YYYYY-DDDDD-12345", route_url="route-very-nice/",
+  route_name="Very nice route", strip_path=False)
+```
+
+## KongAPI.list_all_routes
+Return a dictionary with service as key and the routes as a list value.
+
+```
+kong_api.register_route()
+
+: 'pumpwood-auth-app': ['/admin/pumpwood-auth-app/',
+:   '/health-check/pumpwood-auth-app/',
+:   '/rest/descriptionexperimentteam/',
+:   '/rest/descriptionimage/',
+:   '/rest/kongroute/',
+:   '/rest/kongservice/',
+:   '/rest/pumpwood/',
+:   '/rest/registration/',
+:   '/rest/user/'],
+:  'reload-db--pumpwood-auth-app': ['/reload-db/pumpwood-auth-app/'],
+:  'pumpwood-auth-app-static': ['/static/pumpwood-auth-app/']}
+```

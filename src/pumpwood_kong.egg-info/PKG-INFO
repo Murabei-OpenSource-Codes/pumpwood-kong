@@ -1,0 +1,77 @@
+Metadata-Version: 2.1
+Name: pumpwood-kong
+Version: 0.0
+Summary: API to communicate with Kong API Gateway
+Home-page: https://github.com/Murabei-OpenSource-Codes/pumpwood-kong
+Author: Murabei Data Science
+Author-email: a.baceti@murabei.com
+License: BSD-3-Clause License
+Platform: UNKNOWN
+Classifier: Programming Language :: Python :: 3
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.6
+Description-Content-Type: text/markdown
+License-File: LICENSE
+
+# Pumpwood Kong
+Interact with Kong API to set and list routes.
+
+<a href="https://github.com/Murabei-OpenSource-Codes/pumpwood-kong">
+  pumpwood-kong
+</a>.
+
+<p align="center" width="60%">
+  <img src="doc/sitelogo-horizontal.png" /> <br>
+
+  <a href="https://en.wikipedia.org/wiki/Cecropia">
+    Pumpwood is a native brasilian tree
+  </a> which has a symbiotic relation with ants (Murabei)
+</p>
+
+# Description
+This package helps to interact with Kong API Gateway to create
+services and routes. It also list services and routes.
+
+
+## from pumpwood_kong.kong_api import KongAPI
+Class to help interact with Kong API gateway. Constructor receives the
+Kong API end-point as parameter, then expose different functions to interact
+with.
+
+```
+import os
+from pumpwood_kong.kong_api import KongAPI
+
+
+# Create an Kong api using API_GATEWAY_URL enviroment variable
+API_GATEWAY_URL = os.environ.get("API_GATEWAY_URL")
+kong_api = KongAPI(api_gateway_url=API_GATEWAY_URL)
+```
+
+### KongAPI.list_services
+List services registered on Kong.
+
+```
+kong_api.list_services()
+```
+
+### KongAPI.list_service_routes
+List routes associated with a services.
+
+```
+registed_services = kong_api.list_services()
+for service in registed_services:
+  pass
+
+service_id = "1089u1camxauijdsaoijq8wd"
+kong_api.list_service_routes()
+```
+
+delete_service
+delete_route
+delete_routes_and_service
+register_service
+register_route
+list_all_routes
+
+
