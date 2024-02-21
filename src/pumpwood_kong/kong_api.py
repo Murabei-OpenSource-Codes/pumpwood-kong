@@ -164,11 +164,13 @@ class KongAPI:
             response_text = response.text
             msg = (
                 "[{erro_type}] {error_msg}\n"
-                "[Request Text] {request_text}").format(
-                    erro_type=type(e).__name__,
-                    error_msg=str(e),
-                    request_text=response_text)
-            raise exceptions.PumpWoodException(msg)
+                "[Request Text] {request_text}")
+            raise exceptions.PumpWoodException(
+                message=msg,
+                payload={
+                    "erro_type": type(e).__name__,
+                    "error_msg": str(e),
+                    "request_text": response_text})
 
         kong_service = response.json()
         if healthcheck_route is not None:
