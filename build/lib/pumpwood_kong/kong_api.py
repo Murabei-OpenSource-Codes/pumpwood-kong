@@ -219,7 +219,7 @@ class KongAPI:
                 message=msg,
                 payload={})
 
-        if is_none_service_id:
+        if not is_none_service_id:
             response = requests.put(
                 routes_url_template.format(
                     api_gateway_url=self.api_gateway_url,
@@ -232,7 +232,6 @@ class KongAPI:
                 })
             response.raise_for_status()
             return response.json()
-
         else:
             response = requests.put(
                 routes_url_template.format(
