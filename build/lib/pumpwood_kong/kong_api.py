@@ -186,7 +186,8 @@ class KongAPI:
                 })
         return kong_service
 
-    def register_route(self, service_id: str, route_url: str, route_name: str,
+    def register_route(self, route_url: str, route_name: str,
+                       service_id: str = None, service_name: str = None,
                        strip_path: bool = False):
         """
         Register Route on Kong.
@@ -195,19 +196,56 @@ class KongAPI:
             service_id [str]: Kong service id.
             route_url [str]: End-point route to be registred service by Kong.
             route_name [str]: Name of the route.
+        Kwargs:
+            service_id: str: Kong Service ID.
+            service_name: str = Kong Service Name.
         """
-        response = requests.put(
-            routes_url_template.format(
-                api_gateway_url=self.api_gateway_url,
-                route_name=route_name
-            ),
-            json={
-                "paths": [route_url],
-                "strip_path": strip_path,
-                "service": {"id": service_id}
-            })
-        response.raise_for_status()
-        return response.json()
+        # Raise erros if parameters does not make sense
+        is_none_service_id = service_id is None
+        is_none_service_name = service_name is None
+        if is_none_service_id and is_none_service_name:
+            msg = (
+                "'service_id' and 'service_name' are None. "
+                "It is necessary that one is not None")
+            raise exceptions.PumpWoodException(
+                message=msg,
+                payload={})
+
+        if not is_none_service_id and not is_none_service_name:
+            msg = (
+                "'service_id' and 'service_name' are not None. "
+                "It is necessary that one is None")
+            raise exceptions.PumpWoodException(
+                message=msg,
+                payload={})
+
+        if is_none_service_id:
+            response = requests.put(
+                routes_url_template.format(
+                    api_gateway_url=self.api_gateway_url,
+                    route_name=route_name
+                ),
+                json={
+                    "paths": [route_url],
+                    "strip_path": strip_path,
+                    "id": {"id": service_id}
+                })
+            response.raise_for_status()
+            return response.json()
+
+        else:
+            response = requests.put(
+                routes_url_template.format(
+                    api_gateway_url=self.api_gateway_url,
+                    route_name=route_name
+                ),
+                json={
+                    "paths": [route_url],
+                    "strip_path": strip_path,
+                    "service": {"name": service_name}
+                })
+            response.raise_for_status()
+            return response.json()
 
     def list_all_routes(self):
         """List all routes that have been registed to Kong."""
