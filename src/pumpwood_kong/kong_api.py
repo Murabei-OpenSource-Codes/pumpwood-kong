@@ -230,8 +230,22 @@ class KongAPI:
                     "strip_path": strip_path,
                     "id": {"id": service_id}
                 })
-            response.raise_for_status()
+
+            try:
+                response.raise_for_status()
+            except Exception as e:
+                response_text = response.text
+                msg = (
+                    "[{erro_type}] {error_msg}\n"
+                    "[Request Text] {request_text}")
+                raise exceptions.PumpWoodException(
+                    message=msg,
+                    payload={
+                        "erro_type": type(e).__name__,
+                        "error_msg": str(e),
+                        "request_text": response_text})
             return response.json()
+
         else:
             response = requests.put(
                 routes_url_template.format(
@@ -243,7 +257,20 @@ class KongAPI:
                     "strip_path": strip_path,
                     "service": {"name": service_name}
                 })
-            response.raise_for_status()
+
+            try:
+                response.raise_for_status()
+            except Exception as e:
+                response_text = response.text
+                msg = (
+                    "[{erro_type}] {error_msg}\n"
+                    "[Request Text] {request_text}")
+                raise exceptions.PumpWoodException(
+                    message=msg,
+                    payload={
+                        "erro_type": type(e).__name__,
+                        "error_msg": str(e),
+                        "request_text": response_text})
             return response.json()
 
     def list_all_routes(self):
