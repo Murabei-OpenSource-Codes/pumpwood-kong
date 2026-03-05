@@ -19,7 +19,6 @@ class KongAPI:
                  connect_timeout: None | int = None,
                  write_timeout: None | int = None,
                  read_timeout: None | int = None,
-                 client_max_body_size: None | int = None,
                  retries: None | int = None):
         """__init__.
 
@@ -41,13 +40,13 @@ class KongAPI:
             api_gateway_url = api_gateway_url[:-1]
 
         self.api_gateway_url = api_gateway_url
-        self.connect_timeout = (
+        self.connect_timeout = int(
             connect_timeout or CONNECT_TIMEOUT)
-        self.write_timeout = (
+        self.write_timeout = int(
             write_timeout or WRITE_TIMEOUT)
-        self.read_timeout = (
+        self.read_timeout = int(
             read_timeout or READ_TIMEOUT)
-        self.retries = (
+        self.retries = int(
             retries or RETRIES)
 
         # Configure Kong urls
@@ -190,10 +189,10 @@ class KongAPI:
         payload = {
             'name': service_name,
             'url': service_url,
-            'connect_timeout': connect_timeout or self.connect_timeout,
-            'write_timeout': write_timeout or self.write_timeout,
-            'read_timeout': read_timeout or self.read_timeout,
-            'retries': retries or self.retries,
+            'connect_timeout': int(connect_timeout or self.connect_timeout),
+            'write_timeout': int(write_timeout or self.write_timeout),
+            'read_timeout': int(read_timeout or self.read_timeout),
+            'retries': int(retries or self.retries),
         }
 
         response = requests.put(
