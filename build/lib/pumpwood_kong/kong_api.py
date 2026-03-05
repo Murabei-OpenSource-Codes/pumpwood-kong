@@ -1,6 +1,8 @@
 """Functions to help registering kong API Gateway services and routes."""
 import requests
 from pumpwood_communication import exceptions
+from pumpwood_kong.config import (
+    CONNECT_TIMEOUT, WRITE_TIMEOUT, READ_TIMEOUT, RETRIES)
 
 
 template_service = "{api_gateway_url}/services/{service_name}/"
@@ -10,110 +12,131 @@ routes_url_template = "{api_gateway_url}/routes/{route_name}/"
 class KongAPI:
     """Help setting routes on Kong Api."""
 
-    def __init__(self, api_gateway_url: str, connect_timeout: int = 300000,
-                 write_timeout: int = 300000, read_timeout: int = 300000):
-        """
-        __init__.
+    REQUEST_TIMEOUT: int = 10
+    """Default requests timeout for Kong Admin requests."""
+
+    def __init__(self, api_gateway_url: str,
+                 connect_timeout: None | int = None,
+                 write_timeout: None | int = None,
+                 read_timeout: None | int = None,
+                 client_max_body_size: None | int = None,
+                 retries: None | int = None):
+        """__init__.
 
         Args:
-            api_gateway_url [str]:
-        Kwargs:
-            connect_timeout [int]: Kong connect timeout.
-            write_timeout [int]: Kong write timeout.
-            read_timeout [int]: Kong read timeout.
+            api_gateway_url (str):
+                URL to kong load balancer admin.
+            connect_timeout (int):
+                Kong connect timeout.
+            write_timeout (int):
+                Kong write timeout.
+            read_timeout (int):
+                Kong read timeout.
+            client_max_body_size (int):
+                Kong client max body size.
+            retries (int):
+                Kong retries.
         """
         if api_gateway_url[-1] == '/':
             api_gateway_url = api_gateway_url[:-1]
 
         self.api_gateway_url = api_gateway_url
-        self.connect_timeout = connect_timeout
-        self.write_timeout = write_timeout
-        self.read_timeout = read_timeout
+        self.connect_timeout = (
+            connect_timeout or CONNECT_TIMEOUT)
+        self.write_timeout = (
+            write_timeout or WRITE_TIMEOUT)
+        self.read_timeout = (
+            read_timeout or READ_TIMEOUT)
+        self.retries = (
+            retries or RETRIES)
 
+        # Configure Kong urls
         self._url_services = "{api_gateway_url}/services".format(
             api_gateway_url=self.api_gateway_url)
         self._url_service = self._url_services + "/{service_id}"
         self._url_services_routes = self._url_service + "/routes"
         self._url_services_route = self._url_services_routes + "/{route_id}"
-
         self._url_routes = "{api_gateway_url}/routes".format(
             api_gateway_url=self.api_gateway_url)
         self._url_route = self._url_routes + "/{route_id}"
 
-    def list_services(self) -> list:
-        """
-        List Kong services.
+    def list_services(self) -> list[dict]:
+        """List Kong services.
 
         Args:
             No Args.
-        Return [list(dict)]:
+        Returns: (list(dict))
             List of services avaiable at Kong
         Exceptions:
             Raise response status.
         """
-        response = requests.get(self._url_services)
+        response = requests.get(
+            self._url_services, timeout=self.REQUEST_TIMEOUT)
         response.raise_for_status()
         return response.json()["data"]
 
-    def list_service_routes(self, service_id: str) -> list:
-        """
-        List service routes.
+    def list_service_routes(self, service_id: str) -> list[dict]:
+        """List service routes.
 
         Args:
-            service_id [str]: Kong service id.
-        Return [list(dict)]:
+            service_id (str):
+                Kong service id.
+        Returns: list(dict)
             Return a list of dictionaries with information of routes of the
             service.
         Exceptions:
             Raise response status.
         """
         response = requests.get(
-            self._url_services_routes.format(service_id=service_id))
+            self._url_services_routes.format(service_id=service_id),
+            timeout=self.REQUEST_TIMEOUT)
         response.raise_for_status()
         return response.json()["data"]
 
     def delete_service(self, service_id: str) -> list:
-        """
-        List service routes.
+        """List service routes.
 
         Args:
-            service_id [str]: Kong service id.
-        Return [bool]:
+            service_id (str):
+                Kong service id.
+        Return: (bool)
             Return True
         Exceptions:
             Raise response status.
         """
         response = requests.delete(
-            self._url_service.format(service_id=service_id))
+            self._url_service.format(service_id=service_id),
+            timeout=self.REQUEST_TIMEOUT)
         response.raise_for_status()
         return True
 
     def delete_route(self, route_id: str) -> bool:
-        """
-        List service routes.
+        """List service routes.
 
         Args:
-            route_id [str]: Kong id for the route.
-        Return [bool]:
+            route_id (str):
+                Kong id for the route.
+        Returns: (bool)
             Return True
         Exceptions:
             Raise response status.
         """
         response = requests.delete(
-            self._url_route.format(route_id=route_id))
+            self._url_route.format(route_id=route_id),
+            timeout=self.REQUEST_TIMEOUT)
         response.raise_for_status()
         return True
 
     def delete_routes_and_service(self, list_service_id: list = None) -> bool:
-        """
-        Delete all kong services and associated routes.
+        """Delete all kong services and associated routes.
 
         Services with names starting with 'test' are not removed as they may
         be used for testing.
 
         Args:
-            service_ids [list]: List of service ids to remove from Kong.
-        Return [bool]:
+            list_service_id (list):
+                List of service ids to remove from Kong.
+        Returns: (bool)
             Return True.
         """
         if list_service_id is None:
@@ -135,29 +158,47 @@ class KongAPI:
 
     def register_service(self, service_name: str, service_url: str,
                          healthcheck_route: str = None,
-                         service_kong_id: str = None):
-        """
-        Register a service at Kong.
+                         connect_timeout: None | int = None,
+                         write_timeout: None | int = None,
+                         read_timeout: None | int = None,
+                         retries: None | int = None,
+                         client_max_body_size: None | int = None):
+        """Register a service at Kong.
 
         Args:
-            service_name [str]: Name of the service to be created.
-            service_url [str]: Url to redirect calls to this service.
-        Kwargs:
-            healthcheck_route [str]: A healthcheck end-point for the
-                service if avaiable.
-            service_kong_id [str]: ID of the service at kong.
+            service_name (str):
+                Name of the service to be created.
+            service_url (str):
+                Url to redirect calls to this service.
+            healthcheck_route (str):
+                A healthcheck end-point for the service if avaiable.
+            connect_timeout (int):
+                Time in miloi
+            write_timeout (int):
+                Time in miloi
+            read_timeout (int):
+                Time in miloi
+            retries (int):
+                Number of retries for the service.
+            client_max_body_size (int):
+                Max body size for the service. By default is 0 (unlimited).
         """
+        # Create the kong URL using service name
         temp_service_url = template_service.format(
             api_gateway_url=self.api_gateway_url,
             service_name=service_name)
         payload = {
             'name': service_name,
             'url': service_url,
-            'connect_timeout': self.connect_timeout,
-            'write_timeout': self.write_timeout,
-            'read_timeout': self.read_timeout}
+            'connect_timeout': connect_timeout or self.connect_timeout,
+            'write_timeout': write_timeout or self.write_timeout,
+            'read_timeout': read_timeout or self.read_timeout,
+            'retries': retries or self.retries,
+        }
+
         response = requests.put(
-            temp_service_url, json=payload)
+            temp_service_url, json=payload,
+            timeout=self.REQUEST_TIMEOUT)
         try:
             response.raise_for_status()
         except Exception as e:
@@ -177,28 +218,33 @@ class KongAPI:
             response = requests.put(
                 routes_url_template.format(
                     api_gateway_url=self.api_gateway_url,
-                    route_name=service_name + "--health-check"
-                ),
+                    route_name=service_name + "--health-check"),
                 json={
                     "paths": [healthcheck_route],
                     "strip_path": False,
                     "service": {"id": kong_service["id"]}
-                })
+                }, timeout=self.REQUEST_TIMEOUT)
         return kong_service
 
     def register_route(self, route_url: str, route_name: str,
                        service_id: str = None, service_name: str = None,
                        strip_path: bool = False):
-        """
-        Register Route on Kong.
+        """Register Route on Kong.
 
         Args:
-            service_id [str]: Kong service id.
-            route_url [str]: End-point route to be registred service by Kong.
-            route_name [str]: Name of the route.
-        Kwargs:
-            service_id: str: Kong Service ID.
-            service_name: str = Kong Service Name.
+            service_id (str):
+                Kong service id.
+            route_url (str):
+                End-point route to be registred service by Kong.
+            route_name (str):
+                Name of the route.
+            service_id (str):
+                Kong Service ID.
+            service_name (str):
+                Kong Service Name.
+            strip_path (bool):
+                Set it route match used on Kong to route the request
+                will be removed before passed to downstream service.
         """
         # Raise erros if parameters does not make sense
         is_none_service_id = service_id is None
@@ -223,13 +269,12 @@ class KongAPI:
             response = requests.put(
                 routes_url_template.format(
                     api_gateway_url=self.api_gateway_url,
-                    route_name=route_name
-                ),
+                    route_name=route_name),
                 json={
                     "paths": [route_url],
                     "strip_path": strip_path,
-                    "id": {"id": service_id}
-                })
+                    "id": {"id": service_id}},
+                timeout=self.REQUEST_TIMEOUT)
 
             try:
                 response.raise_for_status()
@@ -250,13 +295,12 @@ class KongAPI:
             response = requests.put(
                 routes_url_template.format(
                     api_gateway_url=self.api_gateway_url,
-                    route_name=route_name
-                ),
+                    route_name=route_name),
                 json={
                     "paths": [route_url],
                     "strip_path": strip_path,
-                    "service": {"name": service_name}
-                })
+                    "service": {"name": service_name}},
+                timeout=self.REQUEST_TIMEOUT)
 
             try:
                 response.raise_for_status()
@@ -280,9 +324,11 @@ class KongAPI:
 
         # get services and routes avaiable on kong
         response_services = requests.get(
-            services_url_template.format(api_gateway_url=self.api_gateway_url))
+            services_url_template.format(api_gateway_url=self.api_gateway_url),
+            timeout=self.REQUEST_TIMEOUT)
         response_routes = requests.get(
-            routes_url_template.format(api_gateway_url=self.api_gateway_url))
+            routes_url_template.format(api_gateway_url=self.api_gateway_url),
+            timeout=self.REQUEST_TIMEOUT)
         response_services.raise_for_status()
         response_routes.raise_for_status()
 

@@ -1,8 +1,10 @@
 LICENSE
 MANIFEST.in
 README.md
+pyproject.toml
 setup.py
 src/pumpwood_kong/__init__.py
+src/pumpwood_kong/config.py
 src/pumpwood_kong/kong.py
 src/pumpwood_kong/kong_api.py
 src/pumpwood_kong.egg-info/PKG-INFO

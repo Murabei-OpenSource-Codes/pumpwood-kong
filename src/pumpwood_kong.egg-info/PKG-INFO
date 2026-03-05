@@ -1,17 +1,28 @@
-Metadata-Version: 2.1
+Metadata-Version: 2.4
 Name: pumpwood-kong
-Version: 0.7
+Version: 0.7.1
 Summary: API to communicate with Kong API Gateway
 Home-page: https://github.com/Murabei-OpenSource-Codes/pumpwood-kong
 Author: Murabei Data Science
 Author-email: a.baceti@murabei.com
 License: BSD-3-Clause License
-Platform: UNKNOWN
 Classifier: Programming Language :: Python :: 3
 Classifier: Operating System :: OS Independent
 Requires-Python: >=3.6
 Description-Content-Type: text/markdown
 License-File: LICENSE
+Requires-Dist: requests
+Dynamic: author
+Dynamic: author-email
+Dynamic: classifier
+Dynamic: description
+Dynamic: description-content-type
+Dynamic: home-page
+Dynamic: license
+Dynamic: license-file
+Dynamic: requires-dist
+Dynamic: requires-python
+Dynamic: summary
 
 # Pumpwood Kong
 Interact with <a href="https://konghq.com/kong"> Kong API gateway </a>
@@ -186,5 +197,3 @@ kong_api.register_route()
 :  'reload-db--pumpwood-auth-app': ['/reload-db/pumpwood-auth-app/'],
 :  'pumpwood-auth-app-static': ['/static/pumpwood-auth-app/']}
 ```
-
-
