@@ -19,7 +19,6 @@ class KongAPI:
                  connect_timeout: None | int = None,
                  write_timeout: None | int = None,
                  read_timeout: None | int = None,
-                 client_max_body_size: None | int = None,
                  retries: None | int = None):
         """__init__.
 
