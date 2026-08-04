@@ -1,1 +1,4 @@
 requests
+diskcache
+pdoc
+orjson
